@@ -16,6 +16,9 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run audit:release
+      - name: Inspect Electron runtime
+        run: |
+          node -e "const fs=require('fs'),cp=require('child_process');const exe=require('electron');console.log({exe,size:fs.statSync(exe).size,signature:fs.readFileSync(exe).subarray(0,2).toString()});const r=cp.spawnSync(exe,['--version'],{encoding:'utf8',timeout:15000,windowsHide:true});console.log({status:r.status,error:r.error?.message,stdout:r.stdout,stderr:r.stderr});"
       - run: npm run test:desktop
         env:
           DEBUG: pw:browser*
