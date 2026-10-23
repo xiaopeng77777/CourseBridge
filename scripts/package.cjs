@@ -4,7 +4,8 @@ const { execFileSync } = require('node:child_process');
 const { auditRelease } = require('./audit-release.cjs');
 const root = path.join(__dirname, '..');
 const dest = path.join(root, 'outputs', 'CourseBridge-Windows');
-const runtime = path.join(root, 'node_modules', 'electron', 'dist');
+// Electron 44 downloads its binary on first require; resolve it before copying.
+const runtime = path.dirname(require('electron'));
 auditRelease(root);
 if (!fs.existsSync(path.join(runtime, 'electron.exe'))) throw new Error('请先安装 Electron 的 Windows 运行时');
 if (fs.existsSync(dest)) throw new Error('输出目录已经存在，请先将旧版本另存后重新打包');

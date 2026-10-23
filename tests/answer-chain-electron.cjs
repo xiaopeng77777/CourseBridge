@@ -8,7 +8,7 @@ fs.mkdirSync(out, { recursive: true });
   const packaged = process.env.COURSEBRIDGE_TEST_EXE;
   let app;
   const launch = async () => {
-    const application = await electron.launch({ executablePath: packaged || process.env.COURSEBRIDGE_ELECTRON || path.join(root, 'node_modules', 'electron', 'dist', 'electron.exe'), args: packaged ? [] : [root], env });
+    const application = await electron.launch({ executablePath: packaged || process.env.COURSEBRIDGE_ELECTRON || require('electron'), args: packaged ? [] : [root], env });
     await application.evaluate(({ shell }) => {
       globalThis.testAnswerCalls = [];
       globalThis.testAnswerLinks = [];

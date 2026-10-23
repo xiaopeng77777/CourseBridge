@@ -12,7 +12,7 @@ const root = path.join(__dirname, '..');
   }
   const env = { ...process.env, COURSEBRIDGE_TEST: '1', COURSEBRIDGE_TEST_PORT: '0', COURSEBRIDGE_DATA_DIR: path.join(testData, 'data') };
   delete env.ELECTRON_RUN_AS_NODE;
-  const application = await electron.launch({ executablePath: process.env.COURSEBRIDGE_TEST_EXE || process.env.COURSEBRIDGE_ELECTRON || path.join(root, 'node_modules', 'electron', 'dist', 'electron.exe'), args: process.env.COURSEBRIDGE_TEST_EXE ? [] : [root], env });
+  const application = await electron.launch({ executablePath: process.env.COURSEBRIDGE_TEST_EXE || process.env.COURSEBRIDGE_ELECTRON || require('electron'), args: process.env.COURSEBRIDGE_TEST_EXE ? [] : [root], env });
   try {
     const page = await application.firstWindow();
     const errors = [];

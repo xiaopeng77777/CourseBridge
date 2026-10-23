@@ -10,7 +10,7 @@ fs.mkdirSync(out, { recursive: true });
   const env = { ...process.env, COURSEBRIDGE_TEST: '1', COURSEBRIDGE_TEST_PORT: '0', COURSEBRIDGE_DATA_DIR: dataDir };
   delete env.ELECTRON_RUN_AS_NODE;
   const packaged = process.env.COURSEBRIDGE_TEST_EXE;
-  const app = await electron.launch({ executablePath: packaged || process.env.COURSEBRIDGE_ELECTRON || path.join(root, 'node_modules', 'electron', 'dist', 'electron.exe'), args: packaged ? [] : [root], env });
+  const app = await electron.launch({ executablePath: packaged || process.env.COURSEBRIDGE_ELECTRON || require('electron'), args: packaged ? [] : [root], env });
   try {
     await app.evaluate(({ shell }) => {
       globalThis.testEnncyCalls = [];

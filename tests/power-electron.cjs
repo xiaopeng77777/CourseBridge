@@ -5,7 +5,7 @@ const root=path.join(__dirname,'..');
  const work=path.join(root,'work/power-electron');fs.mkdirSync(work,{recursive:true});
  const data=fs.mkdtempSync(path.join(work,'data-'));
  const env={...process.env,COURSEBRIDGE_TEST:'1',COURSEBRIDGE_DATA_DIR:data};delete env.ELECTRON_RUN_AS_NODE;
- const application=await electron.launch({executablePath:process.env.COURSEBRIDGE_TEST_EXE||path.join(process.env.CB_PROJECT_ROOT||root,'node_modules/electron/dist/electron.exe'),args:process.env.COURSEBRIDGE_TEST_EXE?[]:[root],env});
+ const application=await electron.launch({executablePath:process.env.COURSEBRIDGE_TEST_EXE||require(require.resolve('electron',{paths:[process.env.CB_PROJECT_ROOT||root]})),args:process.env.COURSEBRIDGE_TEST_EXE?[]:[root],env});
  let timer;
  try {
   const page=await application.firstWindow();await page.waitForSelector('#keepAwake',{state:'attached'});

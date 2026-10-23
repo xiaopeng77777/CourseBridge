@@ -3,7 +3,7 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
 const root = path.resolve(__dirname, '..'), work = path.join(root, 'work/editor-desktop'); fs.mkdirSync(work, { recursive: true });
 (async () => {
   const env = { ...process.env, COURSEBRIDGE_TEST: '1', COURSEBRIDGE_TEST_PORT: '0', COURSEBRIDGE_DATA_DIR: fs.mkdtempSync(path.join(work, 'data-')) }; delete env.ELECTRON_RUN_AS_NODE;
-  const app = await electron.launch({ executablePath: process.env.COURSEBRIDGE_TEST_EXE || path.join(root, 'node_modules/electron/dist/electron.exe'), args: process.env.COURSEBRIDGE_TEST_EXE ? [] : [root], env });
+  const app = await electron.launch({ executablePath: process.env.COURSEBRIDGE_TEST_EXE || require('electron'), args: process.env.COURSEBRIDGE_TEST_EXE ? [] : [root], env });
   try {
     const page = await app.firstWindow(); await page.waitForSelector('#autoAnswer', { state: 'attached' });
     const state = await page.evaluate(() => window.coursebridge.snapshot()); assert.equal(state.version,'0.1.23'); assert.equal(state.settings.enabled,false);
