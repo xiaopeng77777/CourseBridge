@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-labelledby="title desc">
+  <title id="title">课桥 CourseBridge</title><desc id="desc">简洁的本地课程助手，桌面端与浏览器插件全部开源。0.1.25 公开预览版。</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#f8faff"/><stop offset="1" stop-color="#f0f4fc"/></linearGradient><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#dfe6f2" stroke-width=".65"/></pattern></defs>
+  <rect width="1280" height="360" rx="20" fill="url(#bg)"/>
+  <rect x="810" width="470" height="360" fill="url(#grid)" opacity=".6"/>
+  <path d="M810 0V360" stroke="#e2e8f0"/>
+  <g transform="translate(58 64) scale(2.25)" fill="none" stroke="#253247" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18V9m18 9V9M3 12h18M6 18v-3a6 6 0 0 1 12 0v3M7 6h10"/></g>
+  <text x="126" y="100" font-family="Microsoft YaHei UI,Microsoft YaHei,sans-serif" font-size="36" font-weight="700" fill="#1e293b">课桥</text>
+  <text x="126" y="128" font-family="Segoe UI,sans-serif" font-size="16" letter-spacing="1.5" fill="#64748b">CourseBridge</text>
+  <text x="62" y="213" font-family="Microsoft YaHei UI,Microsoft YaHei,sans-serif" font-size="42" font-weight="650" fill="#1e293b">把学习，连起来。</text>
+  <text x="64" y="257" font-family="Microsoft YaHei UI,Microsoft YaHei,sans-serif" font-size="18" fill="#64748b">课程、任务与题库，在你的本地工作区。</text>
+  <g font-family="Segoe UI,Microsoft YaHei UI,sans-serif" font-size="13"><rect x="64" y="291" width="102" height="28" rx="14" fill="#e7edfa"/><text x="83" y="310" fill="#3b5689">OPEN SOURCE</text><text x="185" y="310" fill="#64748b">Windows · Desktop + Extension · 0.1.25 Preview</text></g>
+  <g transform="translate(870 70)"><rect width="346" height="220" rx="14" fill="#fff" stroke="#d9e1ef"/><path d="M0 43H346" stroke="#e6ebf3"/><circle cx="22" cy="22" r="4" fill="#c6d1e2"/><circle cx="37" cy="22" r="4" fill="#c6d1e2"/><circle cx="52" cy="22" r="4" fill="#c6d1e2"/><rect x="22" y="64" width="72" height="134" rx="6" fill="#f1f4f9"/><rect x="111" y="64" width="209" height="34" rx="6" fill="#eef3ff"/><rect x="111" y="114" width="95" height="84" rx="6" fill="#f8fafc" stroke="#e5eaf2"/><rect x="221" y="114" width="99" height="84" rx="6" fill="#f8fafc" stroke="#e5eaf2"/><path d="M126 80H228M126 132H184M126 147H171M236 132H295M236 147H280" stroke="#bccbe3" stroke-width="5" stroke-linecap="round"/><rect x="126" y="169" width="61" height="15" rx="4" fill="#2563eb"/></g>
+</svg>

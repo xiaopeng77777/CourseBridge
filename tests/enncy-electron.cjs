@@ -1,0 +1,88 @@
+const { _electron: electron } = require('playwright-core');
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const root = path.resolve(__dirname, '..');
+const out = path.join(root, 'work', 'enncy-desktop');
+fs.mkdirSync(out, { recursive: true });
+(async () => {
+  const dataDir = fs.mkdtempSync(path.join(out, 'data-'));
+  const env = { ...process.env, COURSEBRIDGE_TEST: '1', COURSEBRIDGE_TEST_PORT: '0', COURSEBRIDGE_DATA_DIR: dataDir };
+  delete env.ELECTRON_RUN_AS_NODE;
+  const packaged = process.env.COURSEBRIDGE_TEST_EXE;
+  const app = await electron.launch({ executablePath: packaged || process.env.COURSEBRIDGE_ELECTRON || path.join(root, 'node_modules', 'electron', 'dist', 'electron.exe'), args: packaged ? [] : [root], env });
+  try {
+    await app.evaluate(({ shell }) => {
+      globalThis.testEnncyCalls = [];
+      globalThis.testEnncyLinks = [];
+      globalThis.testEnncyMode = 'normal';
+      shell.openExternal = async url => { globalThis.testEnncyLinks.push(url); };
+      globalThis.fetch = async (url, init) => {
+        const target = new URL(url);
+        if (target.origin !== 'https://tk.enncy.cn') throw new Error('Unexpected network destination');
+        globalThis.testEnncyCalls.push(target.pathname);
+        const query = target.pathname === '/query';
+        await new Promise(resolve => setTimeout(resolve, query ? 220 : 40));
+        if (init.signal.aborted) throw new Error('abort');
+        const body = globalThis.testEnncyMode === 'invalid' ? { code: 0, message: 'token 无效' } : { code: 1, data: query ? { question: '桌面接口验证题', answer: '乙', times: 19, ai: true } : { times: 20, user_times: 10, success_times: 8 } };
+        return { ok: true, text: async () => JSON.stringify(body) };
+      };
+    });
+    const page = await app.firstWindow();
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.click('[data-page=bank]');
+    await page.click('#bank-tab-services');
+    await page.locator('#enncy-configuration > summary').click();
+    await page.waitForSelector('#enncy-status');
+    assert.equal(await page.locator('#enncy-status').textContent(), '未配置');
+    assert.equal(await page.locator('#enncy-refresh').isDisabled(), true);
+    assert.match(await page.locator('.enncy-disclosure').textContent(), /无隶属或合作关系/);
+    await page.fill('#enncy-token', 'fake-test-credential-only');
+    await page.check('#enncy-enabled');
+    await page.click('#enncy-save');
+    await page.waitForFunction(() => document.querySelector('#enncy-remaining').textContent === '20 次');
+    assert.equal(await page.locator('#enncy-token').inputValue(), '');
+    assert.match(await page.locator('#enncy-stats').textContent(), /累计查询 10 次.*查询成功 8 次/);
+    const state = await page.evaluate(() => coursebridge.snapshot());
+    assert.equal(state.enncy.persisted, true, 'Windows safeStorage must encrypt the test credential');
+    assert.equal(JSON.stringify(state).includes('fake-test-credential-only'), false);
+    assert.equal(fs.readFileSync(path.join(dataDir, 'enncy-config.json'), 'utf8').includes('fake-test-credential-only'), false);
+    await page.click('#enncy-website'); await page.click('#enncy-account'); await page.click('#enncy-docs');
+    assert.deepEqual(await app.evaluate(() => testEnncyLinks), ['https://tk.enncy.cn/', 'https://tk.enncy.cn/user/dashboard', 'https://tk.enncy.cn/tk/article?uid=8ca2dbdd621943c4ba98ebba4d56e568']);
+    await page.evaluate(() => coursebridge.settings({ enabled: true, autoAnswer: true, autoSubmit: true }));
+    const payload = { clientId: 'enncy-test', tabId: 1, frameId: 0, state: { assessment: true, stepKind: 'assessment', questionTotal: 1, questions: 1 }, questions: [{ id: 'q', title: '桌面接口验证题', options: ['甲', '乙'], multiple: false }] };
+    const sync = async body => (await fetch(`http://127.0.0.1:${state.port}/v1/sync`, { method: 'POST', headers: { Authorization: `Bearer ${state.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+    const pending = await sync(payload);
+    assert.equal(pending.answers[0].status, 'pending');
+    assert.match(pending.waitReason, /言溪正在查找/);
+    await page.waitForFunction(() => document.querySelector('#enncy-remaining').textContent === '19 次');
+    const matched = await sync(payload);
+    assert.deepEqual(matched.answers[0], { id: 'q', status: 'matched', indices: [1], source: 'enncy', ai: true });
+    assert.equal(matched.answers[0].ai, true);
+    assert.equal(JSON.stringify(matched).includes('fake-test-credential-only'), false);
+    await page.waitForFunction(() => document.querySelector('#enncy-remaining').textContent === '19 次');
+    assert.match(await page.locator('#enncy-message').textContent(), /AI 生成/);
+    for (const width of [980, 1180, 1440]) {
+      await page.setViewportSize({ width, height: 860 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    }
+    await page.setViewportSize({ width: 1180, height: 860 });
+    await page.evaluate(() => { scrollTo(0, 0); document.querySelector('#toast').classList.remove('show'); });
+    await page.screenshot({ path: path.join(out, '言溪题库-桌面验证.png'), fullPage: true });
+    await page.evaluate(() => coursebridge.control('pause'));
+    await app.evaluate(() => { globalThis.testEnncyMode = 'invalid'; });
+    await page.fill('#enncy-token', 'fake-invalid-credential');
+    await page.click('#enncy-save');
+    await page.waitForFunction(() => document.querySelector('#enncy-message').textContent.includes('凭证无效'));
+    assert.equal(await page.locator('#enncy-status').textContent(), '需检查');
+    await page.click('#enncy-clear');
+    await page.waitForFunction(() => document.querySelector('#enncy-status').textContent === '未配置');
+    assert.equal(await page.locator('#enncy-remaining').textContent(), '—');
+    assert.equal((await page.evaluate(() => coursebridge.snapshot())).enncy.enabled, false);
+    assert.deepEqual(errors, []);
+    const result = { passed: true, actualElectron: true, windowsEncryptedStorage: true, quotaUpdatedFromQuery: true, isolatedMockProvider: true, websiteLinks: 3, noPageErrors: true };
+    fs.writeFileSync(path.join(out, 'result.json'), JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result));
+  } finally { await app.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

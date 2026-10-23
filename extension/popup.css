@@ -1,0 +1,98 @@
+:root {
+  font:
+    13px "Microsoft YaHei UI",
+    system-ui,
+    sans-serif;
+  color: #263247;
+  background: #fafbfd;
+}
+body {
+  width: 310px;
+  margin: 0;
+  padding: 23px;
+  box-sizing: border-box;
+}
+.eyebrow {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: #7b8798;
+}
+h1 {
+  font-size: 24px;
+  margin: 16px 0 13px;
+  font-weight: 600;
+}
+h1 span {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 7px;
+  color: #687589;
+}
+p,
+small {
+  color: #6d7b8e;
+  line-height: 1.8;
+  font-size: 11px;
+}
+label {
+  display: block;
+  margin: 23px 0 8px;
+  font-size: 11px;
+  color: #55667e;
+}
+input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 11px;
+  border: 1px solid #dfe4f0;
+  border-radius: 6px;
+  background: #fff;
+  color: #687a9d;
+}
+button {
+  width: 100%;
+  border: 0;
+  background: #2563eb;
+  color: #fff;
+  padding: 11px;
+  border-radius: 6px;
+  margin-top: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+button:hover {
+  background: #1d54ce;
+}
+button:disabled {
+  opacity: 0.5;
+}
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #b5bef8;
+  outline-offset: 3px;
+}
+.actions {
+  display: flex;
+  gap: 9px;
+}
+.secondary {
+  background: #f1f3f7;
+  color: #52627b;
+}
+.secondary:hover {
+  background: #e8edf4;
+}
+#status {
+  font-size: 11px;
+  color: #61728a;
+  margin-top: 14px;
+  min-height: 38px;
+  line-height: 1.8;
+}
+small {
+  display: block;
+  margin-top: 18px;
+  font-size: 10px;
+}

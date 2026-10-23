@@ -1,0 +1,55 @@
+{
+  "name": "coursebridge",
+  "version": "0.1.25",
+  "private": true,
+  "description": "课桥：独立编写的开源课程助手桌面端与浏览器扩展",
+  "license": "MIT",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.cjs",
+    "test:browser": "node tests/browser.cjs",
+    "test:managed-browser": "node tests/managed-browser.cjs",
+    "browser:install": "node scripts/install-browser.cjs",
+    "test:desktop": "node tests/electron.cjs",
+    "test:ui": "node tests/ui-preview.cjs",
+    "package:win": "node scripts/package.cjs",
+    "test:speed": "node tests/speed-browser.cjs",
+    "test:collection": "node tests/collection-browser.cjs",
+    "test:assessment": "node tests/assessment-browser.cjs",
+    "test:workflow": "node tests/workflow-browser.cjs",
+    "test:resources": "node tests/resources-browser.cjs",
+    "test:document-completion": "node tests/document-completion-browser.cjs",
+    "test:catalog-completion": "node tests/catalog-completion-browser.cjs",
+    "test:power": "node tests/power-electron.cjs",
+    "test:ui-refresh": "node tests/ui-refresh.cjs",
+    "test:enncy": "node --test tests/enncy.test.cjs",
+    "test:enncy-desktop": "node tests/enncy-electron.cjs",
+    "test:deepseek": "node --test tests/deepseek.test.cjs",
+    "test:answer-chain-desktop": "node tests/answer-chain-electron.cjs",
+    "icons:build": "node scripts/build-icons.cjs",
+    "test:exam": "node tests/exam-browser.cjs",
+    "test:answer-isolation": "node tests/answer-isolation-browser.cjs",
+    "test:multichoice": "node tests/multichoice-browser.cjs",
+    "test:editor-input": "node tests/editor-input-browser.cjs",
+    "audit:release": "node scripts/audit-release.cjs",
+    "installer:win": "node scripts/installer.cjs",
+    "docs:preview": "node scripts/preview-docs.cjs"
+  },
+  "devDependencies": {
+    "electron": "44.8.0",
+    "playwright-core": "1.64.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xiaopeng77777/CourseBridge.git"
+  },
+  "homepage": "https://github.com/xiaopeng77777/CourseBridge#readme",
+  "bugs": {
+    "url": "https://github.com/xiaopeng77777/CourseBridge/issues"
+  },
+  "author": "CourseBridge contributors",
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,0 +1,21 @@
+name: 版权与来源反馈
+description: 指出第三方材料来源、授权或归属说明的问题
+body:
+  - type: input
+    id: path
+    attributes:
+      label: 涉及的文件路径与版本
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: 原始来源链接与权利依据
+    validations:
+      required: true
+  - type: textarea
+    id: resolution
+    attributes:
+      label: 需要补充、替换或移除的内容
+    validations:
+      required: true

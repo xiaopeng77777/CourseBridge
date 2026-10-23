@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>课桥 · CourseBridge</title>
+    <link rel="icon" type="image/png" href="../assets/icon-32.png">
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark"><span data-icon="bridge"></span></div>
+        <div>课桥<span>CourseBridge</span></div>
+      </div>
+      <div class="nav-label">工作空间</div>
+      <nav aria-label="主导航">
+        <button data-page="overview" class="active">
+          <span data-icon="overview"></span>学习总览
+        </button>
+        <button data-page="settings">
+          <span data-icon="settings"></span>任务设置
+        </button>
+        <button data-page="bank"><span data-icon="book"></span>我的题库</button>
+        <button data-page="extension">
+          <span data-icon="browser"></span>浏览器连接
+        </button>
+        <button data-page="logs">
+          <span data-icon="activity"></span>活动记录
+        </button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="service-status">
+          <span class="dot"></span>本机服务已就绪
+        </div>
+        <small>本地运行 · 可选第三方查题<br />v0.1.25 · Preview</small>
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div class="breadcrumb">
+          工作空间<span data-icon="chevron"></span
+          ><b id="page-title">学习总览</b>
+        </div>
+        <div class="header-right">
+          <span class="local-pill"><span class="dot"></span>本地运行</span
+          ><span id="date"></span>
+        </div>
+      </header>
+
+      <section
+        id="overview"
+        class="page active"
+        aria-labelledby="overview-title"
+      >
+        <div class="intro">
+          <div>
+            <h1 id="overview-title">学习总览</h1>
+            <p>在这里，继续你的学习。</p>
+          </div>
+          <button class="secondary" id="open-learning">
+            <span data-icon="browser"></span>打开课程浏览器
+          </button>
+        </div>
+        <div class="stats">
+          <article>
+            <div class="stat-label">已连接课程</div>
+            <strong id="course-count">0 <small>个页面</small></strong>
+            <div id="connection-note">打开课程浏览器后自动连接</div>
+          </article>
+          <article>
+            <div class="stat-label">任务状态</div>
+            <strong id="task-state">已暂停</strong>
+            <div id="task-note">准备好后，开始本次任务</div>
+          </article>
+          <article>
+            <div class="stat-label">题库记录</div>
+            <strong id="bank-count">0 <small>道题目</small></strong>
+            <div id="bank-summary-note">从你导入的题库中匹配答案</div>
+          </article>
+        </div>
+        <div class="main-grid">
+          <article class="card course-card">
+            <div class="card-heading">
+              <h2>当前课程</h2>
+              <span id="session-count" class="chip">暂无连接</span>
+            </div>
+            <div id="sessions"></div>
+            <div id="course-empty" class="empty">
+              <div class="empty-art"><span data-icon="book"></span></div>
+              <h3>从一门课程开始</h3>
+              <p>
+                打开课程浏览器，登录学习通并进入具体章节。<br />连接成功后，这里会显示课程进展。
+              </p>
+              <div class="setup-steps">
+                <span><i>1</i>打开浏览器</span><span><i>2</i>进入课程</span
+                ><span><i>3</i>开始任务</span>
+              </div>
+            </div>
+            <div class="course-actions">
+              <div class="action-buttons">
+                <button class="primary" id="start">
+                  <span data-icon="play"></span>开始任务</button
+                ><button class="secondary" id="pause">
+                  <span data-icon="pause"></span>暂停</button
+                ><button class="quiet" id="next">
+                  下一步<span data-icon="arrow"></span>
+                </button>
+              </div>
+              <span id="action-hint">进入课程后，点击开始任务</span>
+            </div>
+          </article>
+          <div class="right-column">
+            <article class="card browser-card">
+              <div class="card-heading">
+                <h2><span data-icon="browser"></span>课程浏览器</h2>
+                <span id="browser-badge" class="chip">未打开</span>
+              </div>
+              <p id="browser-status" class="browser-status">
+                尚未打开课程浏览器
+              </p>
+              <p class="browser-caption">
+                首次下载浏览器组件，插件自动加载并配对。<br />无需预装 Chrome 或 Edge。
+              </p>
+              <button class="secondary full-width" id="open-browser-2">
+                打开课程浏览器 <span data-icon="external"></span>
+              </button>
+            </article>
+            <article class="card mode-card">
+              <div class="card-heading">
+                <h2>本次任务</h2>
+                <button class="text-button" data-go="settings">
+                  调整<span data-icon="arrow"></span>
+                </button>
+              </div>
+              <div id="runtime-settings" class="setting-tags"></div>
+              <div class="mode-description">
+                <span>题目处理</span>
+                <p id="answer-mode">自动填写未开启</p>
+                <button id="online-overview" class="text-button" data-go="bank">在线查题策略 · 本地优先</button>
+              </div>
+              <div class="power-note">
+                <span data-icon="power"></span>
+                <p id="power-summary" aria-live="polite">
+                  仅插电且任务运行时防睡眠
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+        <article class="card recent-card">
+          <div class="card-heading">
+            <h2>最近活动</h2>
+            <button class="text-button" data-go="logs">
+              查看全部<span data-icon="arrow"></span>
+            </button>
+          </div>
+          <div id="recent-list"></div>
+        </article>
+        <footer>
+          <span>本地运行 · 第三方查题需单独启用</span><span>CourseBridge</span>
+        </footer>
+      </section>
+
+      <section id="settings" class="page" aria-labelledby="settings-title">
+        <div class="intro">
+          <div>
+            <h1 id="settings-title">任务设置</h1>
+            <p>播放、切换与答题，按你的习惯设置。</p>
+          </div>
+        </div>
+        <div class="settings-layout">
+          <article class="card settings-card">
+            <div class="settings-column">
+              <div class="group-title">
+                <div>
+                  <h2>课程播放</h2>
+                  <p>播放与章节切换</p>
+                </div>
+              </div>
+              <label class="setting"
+                ><span
+                  ><b>自动下一步</b
+                  ><small>先切换视频与章节测验，再进入下一课时。</small></span
+                ><input id="autoNext" type="checkbox" role="switch"
+              /></label>
+              <label class="setting"
+                ><span
+                  ><b>静音播放</b
+                  ><small
+                    >关闭静音后，部分页面需要手动点击一次播放。</small
+                  ></span
+                ><input id="muted" type="checkbox" role="switch"
+              /></label>
+              <label class="setting"
+                ><span
+                  ><b>播放速度</b
+                  ><small
+                    >最高可选 16 倍，实际速度以网页播放器支持为准。</small
+                  ></span
+                ><select id="playbackRate">
+                  <option value="0.5">0.5 ×</option>
+                  <option value="1">1 ×</option>
+                  <option value="1.25">1.25 ×</option>
+                  <option value="1.5">1.5 ×</option>
+                  <option value="2">2 ×</option>
+                  <option value="3">3 ×</option>
+                  <option value="4">4 ×</option>
+                  <option value="6">6 ×</option>
+                  <option value="8">8 ×</option>
+                  <option value="12">12 ×</option>
+                  <option value="16">16 ×</option>
+                </select></label
+              >
+              <label class="setting"
+                ><span
+                  ><b>切换前等待</b
+                  ><small>当前内容结束后，稍等再继续。</small></span
+                ><select id="nextDelay">
+                  <option value="2">2 秒</option>
+                  <option value="5">5 秒</option>
+                  <option value="10">10 秒</option>
+                  <option value="30">30 秒</option>
+                </select></label
+              >
+              <label class="setting"
+                ><span
+                  ><b>任务运行时防止自动睡眠</b
+                  ><small
+                    >仅插电且课程已连接时生效，允许息屏。拔电、暂停、结束或退出后解除。</small
+                  ><small id="power-status" aria-live="polite"
+                    >仅插电且任务运行时生效</small
+                  ></span
+                ><input id="keepAwake" type="checkbox" role="switch"
+              /></label>
+            </div>
+            <div class="settings-column">
+              <div class="group-title">
+                <div>
+                  <h2>题目处理</h2>
+                  <p>填写与提交方式</p>
+                </div>
+              </div>
+              <label class="setting"
+                ><span
+                  ><b>无法答题时，保留测验并继续学习</b
+                  ><small
+                    >缺答案、答案冲突或未识别到题目时，等待 15
+                    秒后继续。测验仍未完成，可稍后回来补做。</small
+                  ></span
+                ><input id="skipUnanswered" type="checkbox" role="switch"
+              /></label>
+              <label class="setting"
+                ><span
+                  ><b>匹配题库并自动填写</b
+                  ><small
+                    >匹配答案后填写。文本题通过专用浏览器逐字输入，保留已有手动内容；输入期间请勿操作答题框。</small
+                  ></span
+                ><input id="autoAnswer" type="checkbox" role="switch"
+              /></label>
+              <label class="setting"
+                ><span
+                  ><b>全部匹配后自动提交</b
+                  ><small
+                    >全部题目匹配并填写后，自动提交并处理“确认提交”弹窗，等待网页确认完成。</small
+                  ></span
+                ><input id="autoSubmit" type="checkbox" role="switch"
+              /></label>
+              <label class="profile-field" for="major"><b>专业背景</b><small>用于要求结合专业的 AI 文本题，可随时修改或清空。</small><input id="major" type="text" maxlength="80" placeholder="例如：人工智能技术应用" /></label>
+            </div>
+            <div class="save-row">
+              <span id="save-note">设置保存在本机</span
+              ><button class="primary" id="save-settings">保存设置</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="bank" class="page" aria-labelledby="bank-title">
+        <div class="intro">
+          <div>
+            <h1 id="bank-title">我的题库</h1>
+            <p>收好每一道题，需要时再展开。</p>
+          </div>
+          <div class="inline-actions">
+            <button id="export-bank" class="secondary">
+              <span data-icon="download"></span>导出备份</button
+            ><button id="import-bank" class="primary">
+              <span data-icon="upload"></span>导入题库
+            </button>
+          </div>
+        </div>
+        <div class="bank-tabs" role="tablist" aria-label="题库页面">
+          <button id="bank-tab-local" role="tab" aria-selected="true" aria-controls="bank-local" data-bank-view="local" tabindex="0">本地题库</button>
+          <button id="bank-tab-services" role="tab" aria-selected="false" aria-controls="bank-services" data-bank-view="services" tabindex="-1">查题服务</button>
+        </div>
+        <div id="bank-local" role="tabpanel" aria-labelledby="bank-tab-local">
+        <article class="card bank-card">
+          <div class="card-heading">
+            <h2>本地收藏</h2>
+            <div>
+              <span id="bank-total" class="chip">0 道题目</span>
+              <span id="bank-inbox-count" class="chip">0 道待补充</span>
+            </div>
+          </div>
+          <div class="bank-toolbar">
+            <div class="bank-filters" aria-label="题目筛选">
+              <button data-bank-filter="all" class="active">个人题库</button
+              ><button data-bank-filter="pending">待核对</button
+              ><button data-bank-filter="ready">可匹配</button
+              ><button data-bank-filter="unreviewed">在线未核验</button>
+              <button data-bank-filter="offline">离线库</button>
+            </div>
+            <input
+              type="search"
+              id="bank-search"
+              placeholder="搜索题干或选项"
+              aria-label="搜索题干或选项"
+            /><button id="new-question" class="secondary">
+              <span data-icon="plus"></span>新建
+            </button>
+          </div>
+          <details id="question-collection" class="question-collection">
+            <summary><span class="collection-icon" data-icon="book"></span><span class="collection-heading"><b>题目列表</b><small id="collection-count">正在读取本地题库…</small></span><span class="collection-hint">展开查看</span><span class="disclosure-arrow" data-icon="chevron"></span></summary>
+            <div class="collection-tools"><span>点击题目，查看选项与答案</span><button id="collapse-questions" class="text-button" type="button">收起全部题目</button></div>
+          <div id="bank-list" aria-live="polite">
+            <p class="library-empty">正在读取本地题库…</p>
+          </div>
+          <div class="bank-pagination">
+            <span id="bank-result-count">0 道题目</span>
+            <div>
+              <button id="bank-prev" class="quiet">上一页</button
+              ><button id="bank-next" class="quiet">下一页</button>
+            </div>
+          </div>
+          </details>
+          <details class="collection-settings"><summary>收集与离线匹配设置<span data-icon="chevron" class="disclosure-arrow"></span></summary>
+          <div class="bank-options">
+            <label class="setting collect-row"
+              ><span
+                ><b>自动收集题目</b
+                ><small
+                  >保存已识别的题干和选项；补充答案后用于匹配。</small
+                ></span
+              ><input id="collectQuestions" type="checkbox" role="switch"
+            /></label>
+            <div class="offline-bank-note">
+              <div class="card-heading">
+                <h2>离线参考库</h2>
+                <span id="offline-bank-count" class="chip accent-chip"
+                  >尚未加载</span
+                >
+              </div>
+              <p>来源：SwaggyMacro/QuestionBank，答案需核对。</p>
+              <label class="setting"
+                ><span
+                  ><b>使用离线库补充匹配</b
+                  ><small>个人题库未命中时，再查离线参考。</small></span
+                ><input id="useOfflineBank" type="checkbox" role="switch"
+              /></label>
+            </div>
+          </div>
+          </details>
+          <details class="format-details">
+            <summary>如何收集和导入题目？</summary>
+            <p>
+              在课程浏览器打开具体章节测验，已识别的题目会进入“待补充”，同题干和同选项自动去重。不会从已选择的选项猜测正确答案。当前支持常见单选、多选结构。
+            </p>
+            <p>
+              支持 JSON 和 CSV 合并导入。Excel 文件请先另存为 UTF-8 CSV。CSV
+              表头可用“题目,答案,选项,题型”；多个答案或选项用 |
+              分隔，题型填“单选”或“多选”。留空答案可导入待补充题目。导入不同答案产生冲突时会暂停使用该题，等待核对。
+            </p>
+            <pre>
+[
+  { "question": "以下哪项是可再生能源？", "answers": ["太阳能"] },
+  { "question": "待补充的题目", "options": ["选项一", "选项二"], "answers": [] }
+]</pre>
+          </details>
+        </article>
+        </div>
+        <div id="bank-services" role="tabpanel" aria-labelledby="bank-tab-services" hidden>
+          <div class="service-intro"><span data-icon="settings"></span><p>先查本地，再按你的选择补充答案。在线服务独立提供，使用自己的账户与额度。</p></div>
+        <article class="card routing-card" aria-labelledby="routing-title">
+          <div class="card-heading"><h2 id="routing-title">查题策略</h2><span class="chip">本地优先</span></div>
+          <label class="routing-choice" for="lookupMode"><span><b>本地没有可用答案时</b><small>本地包括个人题库及已开启的离线参考库。</small></span>
+            <select id="lookupMode">
+              <option value="enncy-deepseek">先言溪，未命中再用 DeepSeek</option>
+              <option value="enncy">只用言溪</option>
+              <option value="deepseek">只用 DeepSeek</option>
+              <option value="local">只用本地，不联网查题</option>
+            </select>
+          </label>
+          <label class="setting"><span><b>在线答案自动存回本地</b><small>保存题干、选项、答案和来源，下次优先复用；AI 及在线参考答案标记为“未核验”。本地已有答案不直接覆盖。</small></span><input id="saveOnlineAnswers" type="checkbox" role="switch" /></label>
+          <p id="routing-summary" class="enncy-message">本地 → 言溪 → DeepSeek</p>
+          <small class="routing-note">需分别配置并启用选中的服务。言溪未命中、额度不足或不可用时，组合策略才会请求 DeepSeek。只选一种在线来源时，不会回退到另一种。</small>
+          <p id="routing-warning" class="enncy-message" role="status"></p>
+        </article>
+        <div class="online-providers">
+        <article class="card deepseek-card" aria-labelledby="deepseek-title">
+          <div class="card-heading"><div><h2 id="deepseek-title">DeepSeek AI <span class="chip">官方 API</span></h2><p class="enncy-caption">使用自己的 API Key，按所选策略生成练习参考答案。</p></div><span id="deepseek-status" class="chip">未配置</span></div>
+          <div class="enncy-account"><div class="enncy-balance"><span>API 账户余额</span><strong id="deepseek-balance">—</strong><small id="deepseek-updated">配置后读取官方账户余额</small></div><div class="enncy-account-actions"><button id="deepseek-refresh" class="secondary">刷新余额</button><button id="deepseek-account" class="text-button">官方账户与充值 ↗</button></div></div>
+          <p id="deepseek-usage" class="enncy-caption">按 Token 计费，不按题数计费；课桥不收取 AI 调用费。</p>
+          <p id="deepseek-message" class="enncy-message" role="status">尚未配置 DeepSeek</p>
+          <details class="account-configuration" id="deepseek-configuration"><summary>账户配置与使用说明<span class="disclosure-arrow" data-icon="chevron"></span></summary>
+          <form id="deepseek-form" autocomplete="off">
+            <div class="deepseek-model-row"><label for="deepseek-model">模型</label><select id="deepseek-model"><option value="deepseek-flash">DeepSeek Flash（默认）</option><option value="deepseek-v4-pro">DeepSeek V4 Pro</option></select><small>默认关闭深度思考，缩短等待并控制输出用量。</small></div>
+            <label class="enncy-token-field" for="deepseek-key">DeepSeek API Key</label>
+            <div class="enncy-token-row"><input id="deepseek-key" type="password" maxlength="2000" autocomplete="off" spellcheck="false" placeholder="在 DeepSeek 官方平台创建并粘贴" aria-describedby="deepseek-storage" /><button id="deepseek-save" type="submit" class="primary">保存并验证</button><button id="deepseek-clear" type="button" class="quiet">清除凭证</button></div>
+            <div class="enncy-enable-row"><label><input id="deepseek-enabled" type="checkbox" />启用 DeepSeek</label><small id="deepseek-save-note">默认关闭，配置后仍按查题策略使用</small></div>
+          </form>
+          <p id="deepseek-storage" class="enncy-caption">API Key 由系统加密保存在本机，不随题库备份导出。</p>
+
+          <p class="enncy-caption">独立第三方服务，与课桥无隶属或合作关系。</p>
+          <details class="provider-details"><summary>服务、费用与自动保存说明</summary><p>DeepSeek 是独立第三方服务，与课桥无隶属或合作关系。调用费用由 DeepSeek 按你的 API 账户计费，使用课桥不附送额度。启用后会向官方接口发送需要分析的题干、选项和题型；结合专业的文本题还会发送你填写的专业背景。</p><p>AI 可能答错或无法确定答案；成功返回不代表正确。开启自动存回后，结果带来源与“未核验”标记保存，可供后续本地匹配，也会包含在你导出的题库备份中。可以在“在线未核验”筛选中检查并修正。</p><p>保存并验证只读取账户余额，不调用收费的答题接口。自动查题通常每题请求一次；有最低字数要求的文本题，字数不足或被截断时最多自动补写一次，可能增加一次 API 费用。仍不合格则停止，不随心跳重复收费重试；手动重试和更换模型可能产生新费用。</p></details>
+          <div class="inline-actions provider-links"><button id="deepseek-keys" class="text-button">获取 API Key ↗</button><button id="deepseek-docs" class="text-button">官方接口说明 ↗</button><button id="deepseek-retry" class="text-button">重试未命中的题目</button></div>
+          </details>
+        </article>
+        <article class="card enncy-card" aria-labelledby="enncy-title">
+          <div class="card-heading">
+            <div>
+              <h2 id="enncy-title">言溪在线题库 <span class="chip">第三方独立服务</span></h2>
+              <p class="enncy-caption">本地题库缺少答案时，使用你自己的言溪账户联网查询。</p>
+            </div>
+            <span id="enncy-status" class="chip">未配置</span>
+          </div>
+          <div class="enncy-account">
+            <div class="enncy-balance"><span>账户剩余查题次数</span><strong id="enncy-remaining">—</strong><small id="enncy-updated">填写凭证后获取，以言溪返回的额度为准</small></div>
+            <div class="enncy-account-actions">
+              <button id="enncy-refresh" class="secondary">刷新额度</button>
+              <button id="enncy-account" class="text-button">账户与额度 <span data-icon="external"></span></button>
+            </div>
+          </div>
+          <p id="enncy-stats" class="enncy-caption">启用期间每 60 秒刷新，查题返回后立即更新剩余次数。</p>
+          <p id="enncy-message" class="enncy-message" role="status">尚未配置在线题库</p>
+          <details class="account-configuration" id="enncy-configuration"><summary>账户配置与使用说明<span class="disclosure-arrow" data-icon="chevron"></span></summary>
+          <form id="enncy-form" autocomplete="off">
+            <label class="enncy-token-field" for="enncy-token">言溪凭证 Token</label>
+            <div class="enncy-token-row">
+              <input id="enncy-token" type="password" maxlength="2000" autocomplete="off" spellcheck="false" placeholder="在言溪个人中心获取，粘贴到这里" aria-describedby="enncy-storage" />
+              <button id="enncy-save" class="primary" type="submit">保存并验证</button>
+              <button id="enncy-clear" class="quiet" type="button">清除凭证</button>
+            </div>
+            <div class="enncy-enable-row">
+              <label><input id="enncy-enabled" type="checkbox" />启用言溪查题</label>
+              <small id="enncy-save-note">默认关闭，由你选择是否使用</small>
+            </div>
+          </form>
+          <p id="enncy-storage" class="enncy-caption">凭证仅保存在桌面端，不发送给课程网页，不随题库备份导出。</p>
+
+          <div class="enncy-disclosure">
+            <b>言溪题库与课桥无隶属或合作关系。</b>
+            <details class="provider-details"><summary>服务、费用与自动保存说明</summary>
+            <p>课桥只提供可选的接口连接，不提供或出售言溪查题额度。账号、收费、可用次数及服务规则由言溪独立管理；使用课桥不代表获得言溪服务或额度。</p>
+            <p>启用且查题策略包含言溪时，仅在任务运行并开启自动填写时，将缺答案题目的题干、选项和题型发送至言溪。返回内容可能是 AI 生成的参考答案，不保证覆盖所有课程或答案正确。开启“在线答案自动存回本地”后，会保存来源和未核验标记，也会包含在个人题库导出中；关闭时仅供本次运行缓存使用。</p>
+            </details>
+            <div class="inline-actions">
+              <button id="enncy-website" class="text-button">言溪官网 ↗</button>
+              <button id="enncy-docs" class="text-button">接口与使用说明 ↗</button>
+              <button id="enncy-retry" class="text-button">重试未命中的题目</button>
+            </div>
+            <small>重试会再次请求第三方接口，可能消耗你的额度。未配置或关闭时，课桥继续使用本地题库。</small>
+          </div>
+          </details>
+        </article>
+        </div>
+        </div>
+      </section>
+
+      <section id="extension" class="page" aria-labelledby="extension-title">
+        <div class="intro">
+          <div>
+            <h1 id="extension-title">浏览器连接</h1>
+            <p>课桥管理独立的课程浏览器，首次下载后自动加载并配对插件。</p>
+          </div>
+        </div>
+        <article class="card connect-card">
+          <div class="connect-heading">
+            <span class="connection-emblem" data-icon="browser"></span
+            ><span class="chip">专用课程浏览器</span>
+          </div>
+          <h2>打开浏览器，连接你的课程</h2>
+          <p>
+            无需另外安装谷歌 Chrome 或 Microsoft Edge。<br />首次登录学习通后，登录资料会保存在本机。
+          </p>
+          <button class="primary" id="open-browser-3">
+            打开专用课程浏览器 <span aria-hidden="true">↗</span>
+          </button>
+          <div class="connection-facts">
+            <div><b>自动加载插件</b><span>不需要开启开发者模式</span></div>
+            <div><b>自动完成配对</b><span>不需要复制配对码</span></div>
+            <div><b>保留登录资料</b><span>再次打开时继续使用</span></div>
+          </div>
+          <div class="info-note">
+            首次使用需联网下载浏览器组件，适用上游独立条款。关闭课桥会一同关闭课程浏览器；本地插件更新会等待任务暂停且试卷关闭后应用，未保存的输入请先保存。
+          </div>
+        </article>
+        <details class="card manual-connect">
+          <summary>使用普通浏览器（手动连接）</summary>
+          <p>
+            需要使用自己安装的 Chrome 或 Edge
+            时，可按以下步骤连接。专用浏览器连接期间，只接受专用浏览器的任务请求。
+          </p>
+          <div class="install-step">
+            <em>1</em>
+            <div>
+              <h2>加载课桥插件</h2>
+              <p>
+                打开浏览器扩展管理页，开启“开发者模式”，选择“加载已解压的扩展程序”，再选择
+                extension 文件夹。
+              </p>
+              <div class="inline-actions">
+                <button class="secondary" id="open-extension">
+                  打开插件文件夹 ↗</button
+                ><code>chrome://extensions</code><code>edge://extensions</code>
+              </div>
+            </div>
+          </div>
+          <div class="install-step">
+            <em>2</em>
+            <div>
+              <h2>复制配对码并连接</h2>
+              <p>
+                点击浏览器工具栏里的“课桥”，粘贴配对码，选择“保存并连接”，再刷新课程页面。
+              </p>
+              <button class="secondary" id="copy-token">复制配对码</button>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="logs" class="page" aria-labelledby="logs-title">
+        <div class="intro">
+          <div>
+            <h1 id="logs-title">活动记录</h1>
+            <p>查看本次运行中最近的 150 条事件。</p>
+          </div>
+          <span class="chip">本次运行</span>
+        </div>
+        <article class="card log-card" id="log-list"></article>
+      </section>
+      <dialog id="question-editor">
+        <form id="question-form">
+          <div class="card-heading">
+            <h2 id="editor-title">补充题目与答案</h2>
+            <button
+              type="button"
+              id="close-editor"
+              class="quiet"
+              aria-label="关闭题目编辑"
+            >
+              ×
+            </button>
+          </div>
+          <p id="editor-source"></p>
+          <p id="editor-conflict" class="info-note" hidden></p>
+          <label class="editor-field"
+            >题干<textarea
+              id="question-text"
+              rows="3"
+              maxlength="4000"
+              required
+            ></textarea></label
+          ><label class="editor-field"
+            >题型<select id="question-type">
+              <option value="single">单选题</option>
+              <option value="multiple">多选题</option>
+              <option value="blank">填空题</option>
+              <option value="short">简答题</option>
+              <option value="essay">论述题</option>
+            </select></label
+          ><label class="editor-field"
+            >选项 · 每行一个<textarea
+              id="question-options"
+              rows="4"
+              placeholder="选项一&#10;选项二"
+            ></textarea></label
+          ><label class="editor-field"
+            >正确答案 · 每行一个<textarea
+              id="question-answers"
+              rows="2"
+              maxlength="16000"
+              placeholder="填写选项完整文字；暂时没有答案可留空"
+            ></textarea></label
+          ><button type="button" id="lookup-offline" class="text-button">
+            从离线库查找参考答案 ↗
+          </button>
+          <p id="reference-note"></p>
+          <p>
+            填写答案并保存后，会用于本地自动匹配。没有答案时仅保存题目；请先核对答案。
+          </p>
+          <div class="save-row">
+            <span id="editor-error" role="alert"></span
+            ><button type="submit" id="save-question" class="primary">
+              保存题目与答案
+            </button>
+          </div>
+        </form>
+      </dialog>
+      <div id="toast" role="status" aria-live="polite"></div>
+    </main>
+    <script src="sessions.js"></script>
+    <script src="icons.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

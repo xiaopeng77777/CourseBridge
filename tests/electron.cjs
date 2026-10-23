@@ -1,0 +1,107 @@
+const { _electron: electron } = require('playwright-core');
+const path = require('node:path');
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const root = path.join(__dirname, '..');
+(async () => {
+  fs.mkdirSync(path.join(root, 'work'), { recursive: true });
+  const testData = fs.mkdtempSync(path.join(root, 'work', 'electron-test-'));
+  if (process.env.COURSEBRIDGE_TEST_OFFLINE_BANK) {
+    fs.mkdirSync(path.join(testData, 'data'), { recursive: true });
+    fs.copyFileSync(process.env.COURSEBRIDGE_TEST_OFFLINE_BANK, path.join(testData, 'data', 'offline-bank.sqlite'));
+  }
+  const env = { ...process.env, COURSEBRIDGE_TEST: '1', COURSEBRIDGE_TEST_PORT: '0', COURSEBRIDGE_DATA_DIR: path.join(testData, 'data') };
+  delete env.ELECTRON_RUN_AS_NODE;
+  const application = await electron.launch({ executablePath: process.env.COURSEBRIDGE_TEST_EXE || process.env.COURSEBRIDGE_ELECTRON || path.join(root, 'node_modules', 'electron', 'dist', 'electron.exe'), args: process.env.COURSEBRIDGE_TEST_EXE ? [] : [root], env });
+  try {
+    const page = await application.firstWindow();
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.waitForSelector('#course-count');
+    const state = await page.evaluate(() => window.coursebridge.snapshot());
+    assert.equal(state.token.length, 32);
+    assert.equal(state.settings.enabled, false);
+    const prefs = await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.getLastWebPreferences());
+    assert.equal(prefs.contextIsolation, true);
+    assert.equal(prefs.nodeIntegration, false);
+    assert.equal(prefs.sandbox, true);
+    await page.click('#start');
+    await page.waitForFunction(() => document.querySelector('#task-state').textContent === '等待内容');
+    await page.click('#pause');
+    await page.waitForFunction(() => document.querySelector('#task-state').textContent === '已暂停');
+    await page.click('[data-page=settings]');
+    await page.check('#autoAnswer');
+    await page.selectOption('#playbackRate', '16');
+    await page.click('#save-settings');
+    assert.equal((await page.evaluate(() => window.coursebridge.snapshot())).settings.autoAnswer, true);
+    assert.equal((await page.evaluate(() => window.coursebridge.snapshot())).settings.playbackRate, 16);
+    await application.evaluate(({ dialog }, file) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] }); }, path.join(root, 'examples', 'question-bank.json'));
+    await page.click('[data-page=bank]');
+    await page.click('#import-bank');
+    await page.waitForFunction(() => document.querySelector('#bank-total').textContent === '2 道题目');
+    await page.click('#new-question');
+    await page.fill('#question-text', '桌面本地题库验证');
+    await page.fill('#question-options', '甲\n乙');
+    await page.click('#save-question');
+    await page.waitForFunction(() => document.querySelector('#bank-inbox-count').textContent === '1 道待补充');
+    await page.click('[data-bank-filter=pending]');
+    await page.locator('.library-row > summary').click();
+    await page.getByRole('button', { name: '补充答案', exact: true }).click();
+    await page.fill('#question-answers', '乙');
+    await page.click('#save-question');
+    await page.waitForFunction(() => document.querySelector('#bank-total').textContent === '3 道题目');
+    await page.click('[data-bank-filter=ready]');
+    await page.fill('#bank-search', '桌面本地题库验证');
+    await page.waitForFunction(() => document.querySelectorAll('.library-row').length === 1);
+    assert.match(await page.locator('.library-row').textContent(), /答案：乙/);
+    await page.locator('.collection-settings > summary').click();
+    await page.uncheck('#collectQuestions');
+    assert.equal((await page.evaluate(() => window.coursebridge.snapshot())).settings.collectQuestions, false);
+    await page.check('#collectQuestions');
+    const backupFile = path.join(testData, '本地题库备份.json');
+    await application.evaluate(({ dialog }, file) => { dialog.showSaveDialog = async () => ({ canceled: false, filePath: file }); }, backupFile);
+    await page.click('#export-bank');
+    await page.waitForFunction(() => document.querySelector('#toast').textContent === '题库备份已保存');
+    const exported = fs.readFileSync(backupFile, 'utf8');
+    assert.equal(JSON.parse(exported).questions.length, 3);
+    assert.equal(exported.includes(state.token), false);
+    fs.mkdirSync(path.join(root, 'outputs'), { recursive: true });
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({ path: path.join(root, 'outputs', '本地题库-桌面实测.png'), fullPage: true });
+    console.log('PASS: 题库新建、待补充、补答案、搜索、收集开关及原生导出备份。');
+    if (process.env.COURSEBRIDGE_TEST_OFFLINE_BANK) {
+      assert.equal(state.offlineBankCount, 582055);
+      await page.click('[data-bank-filter=offline]');
+      await page.fill('#bank-search', '植入期限');
+      await page.waitForFunction(() => document.querySelectorAll('.library-row').length === 1 && document.querySelector('.library-row').textContent.includes('植入期限'));
+      await page.evaluate(() => scrollTo(0, 0));
+      await page.screenshot({ path: path.join(root, 'outputs', '离线题库-桌面实测.png'), fullPage: true });
+      await page.locator('.library-row > summary').click();
+      await page.getByRole('button', { name: '核对并存入', exact: true }).click();
+      await page.fill('#question-options', '1-2年\n2-3年\n3-4年\n4-5年');
+      await page.click('#lookup-offline');
+      await page.waitForFunction(() => document.querySelector('#reference-note').textContent.startsWith('已填入离线参考答案'));
+      assert.equal(await page.locator('#question-answers').inputValue(), '2-3年');
+      await page.click('#close-editor');
+      await page.check('#useOfflineBank');
+      assert.equal((await page.evaluate(() => window.coursebridge.snapshot())).settings.useOfflineBank, true);
+      await page.uncheck('#useOfflineBank');
+      console.log('PASS: 582055 条真实离线库已加载，可搜索当前课程题目、按选项查询参考并显式启用或关闭匹配。');
+    }
+    await page.click('[data-page=overview]');
+    if (process.env.COURSEBRIDGE_TEST_MANAGED === '1') {
+      await page.click('#open-learning');
+      await page.waitForFunction(() => document.querySelector('#browser-status').textContent.includes('插件已自动配对'), null, { timeout: 45000 });
+      const browser = (await page.evaluate(() => window.coursebridge.snapshot())).browser;
+      assert.equal(browser.running, true);
+      assert.equal(browser.version, '0.1.15');
+      assert.match(browser.status, /自动配对/);
+      console.log('PASS: 打包桌面端一键启动专用浏览器，运行时与插件实际加载并自动配对。');
+    }
+    await page.waitForTimeout(400);
+    fs.mkdirSync(path.join(root, 'outputs'), { recursive: true });
+    await page.screenshot({ path: path.join(root, 'outputs', '桌面实测.png'), fullPage: true });
+    assert.equal(errors.length, 0, errors.join('\n'));
+    console.log('PASS: Electron 实际窗口、隔离预加载、开始暂停、配置保存及原生题库导入通过。');
+  } finally { await application.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

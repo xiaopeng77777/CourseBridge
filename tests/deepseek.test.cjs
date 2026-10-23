@@ -1,0 +1,90 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { createCipheriv, createDecipheriv, randomBytes } = require('node:crypto');
+const { createDeepSeek, parseCompletion } = require('../desktop/deepseek.cjs');
+const { resolveOnline } = require('../desktop/answer-routing.cjs');
+const root = path.join(__dirname, '..', 'work', 'deepseek-tests'); fs.mkdirSync(root, { recursive: true });
+const question = { title: '测试题', options: ['甲', '乙'], multiple: false };
+const secret = 'sk-private-test-only';
+const balance = { is_available: true, balance_infos: [{ currency: 'CNY', total_balance: '5.00' }] };
+const completion = (value, finish_reason = 'stop') => ({ choices: [{ finish_reason, message: { content: typeof value === 'string' ? value : JSON.stringify(value) } }], usage: { total_tokens: 123 } });
+const response = body => ({ ok: true, text: async () => JSON.stringify(body) });
+const tick = () => new Promise(resolve => setTimeout(resolve, 5));
+async function settled(service) { for (let i = 0; i < 100; i++) { if (!service.snapshot().pending) return; await tick(); } throw new Error('queue timeout'); }
+function setup(t, options = {}) {
+  const dataDir = fs.mkdtempSync(path.join(root, 'case-')), requests = [];
+  const { fetchImpl: custom, ...rest } = options;
+  const service = createDeepSeek({ dataDir, requestGap: 0, ...rest, fetchImpl: async (url, init) => { requests.push({ url, init }); return custom ? custom(url, init) : response(new URL(url).pathname === '/user/balance' ? balance : completion({ indices: [1], uncertain: false })); } });
+  t.after(() => { service.close(); assert.ok(path.resolve(dataDir).startsWith(path.resolve(root) + path.sep)); fs.rmSync(dataDir, { recursive: true, force: true }); });
+  return { service, dataDir, requests };
+}
+test('DeepSeek 只接受完整的结构化答案，拒绝截断、不确定、越界、重复和单选多答案', () => {
+  assert.deepEqual(parseCompletion(question, completion({ indices: [1], uncertain: false })).indices, [1]);
+  for (const item of [{ indices: [2], uncertain: false }, { indices: [-1], uncertain: false }, { indices: [1, 1], uncertain: false }, { indices: [0, 1], uncertain: false }, { indices: [1], uncertain: true }, { indices: ['B'], uncertain: false }]) assert.notEqual(parseCompletion(question, completion(item)).status, 'matched');
+  assert.equal(parseCompletion(question, completion({ indices: [1], uncertain: false }, 'length')).status, 'missing');
+  assert.equal(parseCompletion(question, completion('不是 JSON')).status, 'missing');
+  assert.deepEqual(parseCompletion({ ...question, multiple: true }, completion({ indices: [1, 0], uncertain: false })).indices, [0, 1]);
+  assert.equal(parseCompletion({ ...question, options: ['同项', '同项'] }, completion({ indices: [1], uncertain: false })).status, 'ambiguous');
+});
+test('凭证只在官方请求头中；保存验证不收费查题，心跳复用结果且保留用量', async t => {
+  const { service, dataDir, requests } = setup(t);
+  assert.equal(service.resolve(question, true), null); assert.equal(requests.length, 0);
+  await service.configure({ apiKey: secret, enabled: true });
+  assert.equal(requests.length, 1); assert.equal(new URL(requests[0].url).pathname, '/user/balance');
+  assert.equal(service.snapshot().balances[0].total, '5.00');
+  assert.equal(service.resolve(question, false), null);
+  assert.equal(service.resolve(question, true).status, 'pending');
+  service.resolve(question, true); await settled(service);
+  assert.deepEqual(service.resolve(question, true).indices, [1]);
+  const queries = requests.filter(x => x.url.endsWith('/chat/completions')); assert.equal(queries.length, 1);
+  assert.equal(queries[0].init.headers.Authorization, `Bearer ${secret}`);
+  assert.equal(queries[0].url.includes(secret), false);
+  const body = JSON.parse(queries[0].init.body);
+  assert.equal(body.model, 'deepseek-flash'); assert.equal(body.thinking.type, 'disabled'); assert.equal(body.response_format.type, 'json_object');
+  assert.equal(body.messages[1].content.includes('"index":1'), true);
+  assert.equal(service.snapshot().sessionTokens, 123);
+  assert.equal(JSON.stringify(service.snapshot()).includes(secret), false);
+  assert.equal(fs.readFileSync(path.join(dataDir, 'deepseek-config.json'), 'utf8').includes(secret), false);
+  assert.equal(service.snapshot().persisted, false);
+  service.setActive(false); assert.equal(service.resolve(question, true), null);
+});
+test('系统加密重启恢复，换模型不复用旧答案，清除凭证清除账户状态', async t => {
+  const encryptionKey = randomBytes(32);
+  const secureStorage = { isEncryptionAvailable: () => true, encryptString(value) { const iv = randomBytes(16), cipher = createCipheriv('aes-256-cbc', encryptionKey, iv); return Buffer.concat([iv, cipher.update(value), cipher.final()]); }, decryptString(value) { const cipher = createDecipheriv('aes-256-cbc', encryptionKey, value.subarray(0, 16)); return Buffer.concat([cipher.update(value.subarray(16)), cipher.final()]).toString(); } };
+  const { service, dataDir, requests } = setup(t, { secureStorage });
+  await service.configure({ apiKey: secret, enabled: true }); service.resolve(question, true); await settled(service);
+  await service.configure({ model: 'deepseek-v4-pro', enabled: true });
+  assert.equal(service.resolve(question, true).status, 'pending'); await settled(service);
+  assert.equal(JSON.parse(requests.filter(x => x.init.body).at(-1).init.body).model, 'deepseek-v4-pro');
+  const reloaded = createDeepSeek({ dataDir, secureStorage }); t.after(() => reloaded.close());
+  assert.equal(reloaded.snapshot().configured, true); assert.equal(reloaded.snapshot().model, 'deepseek-v4-pro');
+  await reloaded.configure({ clear: true, enabled: false });
+  assert.equal(reloaded.snapshot().configured, false); assert.deepEqual(reloaded.snapshot().balances, []);
+});
+test('余额不足、无效凭证、429、超时都有原因，失败不会随心跳自动重试', async t => {
+  const noMoney = setup(t, { fetchImpl: async () => response({ ...balance, is_available: false }) });
+  await noMoney.service.configure({ apiKey: secret, enabled: true }); assert.match(noMoney.service.resolve(question, true).detail, /余额不足/);
+  assert.equal(noMoney.requests.length, 1);
+  const invalid = setup(t, { fetchImpl: async () => ({ ok: false, status: 401 }) });
+  await invalid.service.configure({ apiKey: secret, enabled: true }); assert.match(invalid.service.resolve(question, true).detail, /API Key 无效/); assert.equal(invalid.requests.length, 1);
+  const limited = setup(t, { fetchImpl: async url => url.endsWith('/user/balance') ? response(balance) : { ok: false, status: 429 } });
+  await limited.service.configure({ apiKey: secret, enabled: true }); limited.service.resolve(question, true); await settled(limited.service);
+  assert.match(limited.service.resolve(question, true).detail, /请求受限/); assert.equal(limited.requests.filter(x => x.init.body).length, 1);
+  limited.service.retry(); limited.service.resolve(question, true); await settled(limited.service); assert.equal(limited.requests.filter(x => x.init.body).length, 2);
+  const slow = setup(t, { requestTimeout: 20, fetchImpl: async (url, init) => url.endsWith('/user/balance') ? response(balance) : new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(new Error(secret)))) });
+  await slow.service.configure({ apiKey: secret, enabled: true }); slow.service.resolve(question, true); await settled(slow.service); assert.match(slow.service.resolve(question, true).detail, /超时/);
+  assert.equal(JSON.stringify(slow.service.snapshot()).includes(secret), false);
+});
+test('策略只使用选定来源，言溪 pending 阻止 AI 请求，有答案即停止，失败后才回退', () => {
+  const calls = []; let enncy = { status: 'missing', indices: [], detail: '未命中' };
+  const providers = { enncy: { resolve: () => { calls.push('enncy'); return enncy; } }, deepseek: { resolve: () => { calls.push('deepseek'); return { status: 'matched', indices: [1] }; } } };
+  const run = mode => { calls.length = 0; return resolveOnline(question, { mode, providers, canRequest: true }); };
+  assert.equal(run('local'), null); assert.deepEqual(calls, []);
+  run('deepseek'); assert.deepEqual(calls, ['deepseek']);
+  run('enncy'); assert.deepEqual(calls, ['enncy']);
+  run('enncy-deepseek'); assert.deepEqual(calls, ['enncy', 'deepseek']);
+  enncy = { status: 'pending', indices: [] }; assert.equal(run('enncy-deepseek').pendingSource, 'enncy'); assert.deepEqual(calls, ['enncy']);
+  enncy = { status: 'matched', indices: [0] }; assert.deepEqual(run('enncy-deepseek').indices, [0]); assert.deepEqual(calls, ['enncy']);
+});
