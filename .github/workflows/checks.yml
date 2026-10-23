@@ -17,3 +17,5 @@ jobs:
       - run: npm test
       - run: npm run audit:release
       - run: npm run test:desktop
+        env:
+          DEBUG: pw:browser*
