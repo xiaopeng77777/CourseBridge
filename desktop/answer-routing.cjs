@@ -4,10 +4,11 @@ function resolveOnline(question, { mode, providers, canRequest }) {
   let last = null;
   const tried = [];
   for (const name of onlineChain(mode)) {
+    if (question.hasImages && name === 'enncy') { if (canRequest) tried.push('图片题不消耗言溪次数，请使用本地已存答案或启用 DeepSeek Flash 看图'); continue; }
     const value = providers[name].resolve(question, canRequest);
     if (!value) { if (canRequest) tried.push(`${name === 'deepseek' ? 'DeepSeek' : '言溪'}未配置或未启用`); continue; }
     if (value.status === 'matched') return value;
-    if (value.status === 'pending') return { ...value, detail: `${name === 'deepseek' ? 'DeepSeek' : '言溪'}正在查题`, pendingSource: name };
+    if (value.status === 'pending') return { ...value, detail: value.detail || `${name === 'deepseek' ? 'DeepSeek' : '言溪'}正在查题`, pendingSource: name };
     if (value.detail) tried.push(value.detail);
     last = value;
   }

@@ -32,3 +32,5 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
   return true;
 });
 globalThis.CourseBridgeTextProtocol = 1;
+
+globalThis.CourseBridgeImageProtocol = 2;

@@ -4,12 +4,12 @@
 
 **一个简洁的本地课程助手。桌面端与浏览器插件，源码全部开放。**
 
-[![Version](https://img.shields.io/badge/preview-0.1.25-2563eb?style=flat-square)](https://github.com/xiaopeng77777/CourseBridge/releases/tag/v0.1.25)
+[![Version](https://img.shields.io/badge/preview-0.1.27-2563eb?style=flat-square)](https://github.com/xiaopeng77777/CourseBridge/releases/tag/v0.1.27)
 [![Windows](https://img.shields.io/badge/Windows-x64-64748b?style=flat-square)](#开始使用)
 [![License](https://img.shields.io/badge/license-MIT-64748b?style=flat-square)](LICENSE)
 [![Checks](https://github.com/xiaopeng77777/CourseBridge/actions/workflows/checks.yml/badge.svg)](https://github.com/xiaopeng77777/CourseBridge/actions/workflows/checks.yml)
 
-[下载安装](https://github.com/xiaopeng77777/CourseBridge/releases/tag/v0.1.25) · [使用说明](docs/GETTING_STARTED.md) · [来源与致谢](docs/ATTRIBUTION.md) · [反馈问题](https://github.com/xiaopeng77777/CourseBridge/issues)
+[下载安装](https://github.com/xiaopeng77777/CourseBridge/releases/tag/v0.1.27) · [使用说明](docs/GETTING_STARTED.md) · [来源与致谢](docs/ATTRIBUTION.md) · [反馈问题](https://github.com/xiaopeng77777/CourseBridge/issues)
 
 </div>
 
@@ -35,19 +35,28 @@
 
 | 能力 | 当前实现 |
 | --- | --- |
-| 专用课程浏览器 | 独立登录资料，自动加载、配对本地插件；无需预装 Google Chrome |
+| 专用课程浏览器 | 默认进入个人空间，独立登录资料，自动加载、配对本地插件；无需预装 Google Chrome |
 | 课程任务 | 识别视频、图片、文档及同节多个资源；按页面反馈判断状态和切换环节 |
 | 播放设置 | 静音、切换等待、1–16 倍速选项；实际速度和完成条件由网页播放器决定 |
 | 本地题库 | JSON / CSV 导入、搜索、编辑、导出；题目默认折叠，保留来源与待核验状态 |
 | 可选查题 | 本地 → 言溪 → DeepSeek，或本地加其中一个服务；账号与费用自行承担 |
+| 图片题 | 读取题干与选项图片、图文混排和长图；可选 DeepSeek Flash 看图，识别失败时明确提示 |
 | 文本题 | 识别填空、简答和论述题；专用浏览器输入并回读核对，失败时保留人工处理 |
 | 任务与电源状态 | 本地活动记录、等待原因、插电运行时的防自动睡眠；允许系统息屏 |
 
 自动填写、自动提交默认关闭。网络答案可选择存回本地，并明确标记来源和未核验状态。**没有资料时，本地题库为空是正常的**；安装软件不包含任何第三方查题额度。
 
+## 0.1.27 更新
+
+- 修复图片选项与 A/B/C/D 标签分离时漏识别的问题，补充可见 `aria-hidden` 图片与背景图片支持。
+- 只识别到选项字母时停止无效在线查题；开启图片分析会向你配置的 DeepSeek 发送对应图片，并产生 Token 费用。
+- 重新打开课程浏览器默认进入个人空间，不再恢复旧课程或考试页面。
+
+详见[更新说明](docs/RELEASE-0.1.27.md)与[图片题设置](docs/图片题与默认入口.md)。
+
 ## 开始使用
 
-1. 在 [Releases](https://github.com/xiaopeng77777/CourseBridge/releases/tag/v0.1.25) 下载 `CourseBridge-0.1.25-Setup.exe`，安装后启动课桥。
+1. 在 [Releases](https://github.com/xiaopeng77777/CourseBridge/releases/tag/v0.1.27) 下载 `CourseBridge-0.1.27-Setup.exe`，安装后启动课桥。
 2. 点击“打开课程浏览器”。首次使用会询问是否从上游官方分发地址下载浏览器组件，需联网并预留约 200 MB 下载空间。
 3. 在官方页面自行登录，进入具体课程章节；回到课桥确认连接状态。
 4. 按需要导入有权使用的题库，或在“我的题库 → 查题服务”自行配置言溪 / DeepSeek，再调整任务设置并开始。
@@ -118,8 +127,8 @@ npm run installer:win
 
 ## 隐私与贡献
 
-0.1.25 不包含 0.1.24 特殊测试版的后台用量试验模块、自动统计导出或监控上报。普通活动记录和账户额度显示用于本地操作反馈，详见 [隐私说明](docs/PRIVACY.md)。
+0.1.27 不包含 0.1.24 特殊测试版的后台用量试验模块、自动统计导出或监控上报。普通活动记录和账户额度显示用于本地操作反馈，详见 [隐私说明](docs/PRIVACY.md)。
 
 欢迎提交兼容性问题、修复和文档改进。请先阅读 [CONTRIBUTING](CONTRIBUTING.md)，不要在 Issue、截图或补丁中提交 API Key、配对码、二维码、学号和真实试卷。安全问题见 [SECURITY](SECURITY.md)。
 
-<div align="center"><sub>课桥 · CourseBridge · 0.1.25 Preview<br/>源码开放，来源透明，数据由你管理。</sub></div>
+<div align="center"><sub>课桥 · CourseBridge · 0.1.27 Preview<br/>源码开放，来源透明，数据由你管理。</sub></div>

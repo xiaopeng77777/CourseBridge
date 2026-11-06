@@ -23,15 +23,27 @@
     return questionElements(doc, includeHidden).map((element, index) => {
       const titleElement = element.querySelector('[data-question-title], .Zy_TItle, .mark_name, .question-title, .tkItem_title, h3');
       const titleText = root.CourseBridgeFont?.text(titleElement) || {value:titleElement?.textContent?.trim(),unresolved:false};
-      const title = titleText.value;
+      let title = titleText.value;
       const native = [...element.querySelectorAll('input[type=radio], input[type=checkbox]')];
       const rows = [...element.querySelectorAll('.Zy_ulTop > li, .stem_answer > .answerBg, .stem_answer > div[role=radio], .stem_answer > div[role=checkbox], [role=radio], [role=checkbox]')].filter(el => (includeHidden || visible(el)) && !el.querySelector('[role=radio],[role=checkbox]'));
       const multiple = native.some(input => input.type === 'checkbox') || /多选题/.test(title || '') || rows.some(row => row.getAttribute('role') === 'checkbox');
       const inputs = native.length ? native : rows.map(row => customInput(row, multiple));
       const textOf = el => root.CourseBridgeFont?.text(el) || {value:el?.textContent?.trim() || '',unresolved:false};
-      const optionTexts = native.length ? native.map(input => textOf(input.closest('.ans-videoquiz-opt') || input.closest('label') || (input.id && doc.querySelector(`label[for="${CSS.escape(input.id)}"]`)) || input.parentElement)) : rows.map(row => textOf(row.querySelector('a.after,.option-content,.answerText') || row));
-      const options = optionTexts.map(item=>item.value);
-      const base = { id: String(index), title, titleElement, options, multiple, encoded: titleText.unresolved || optionTexts.some(item=>item.unresolved), element, inputs };
+      const optionElements = native.length ? native.map(input => input.closest('.ans-videoquiz-opt') || input.closest('label') || (input.id && doc.querySelector(`label[for="${CSS.escape(input.id)}"]`)) || input.parentElement) : rows.map(row => row.querySelector('a.after,.option-content,.answerText') || row);
+      const optionTexts = optionElements.map(textOf);
+      let options = optionTexts.map(item=>item.value);
+      // The letter/control label may be separate from the actual image content.
+      const imageScopes = optionElements.map((scope,i) => {
+        const row = (native.length ? native[i] : rows[i])?.closest('.Zy_ulTop > li,.answerBg,[role=radio],[role=checkbox],.ans-videoquiz-opt');
+        return row && element.contains(row) ? row : scope;
+      });
+      const visual = root.CourseBridgeImages?.read(element, titleElement, imageScopes, title, options) || {};
+      if (!visual.hasImages && options.length >= 2 && options.every(option => /^[A-H][.、．)）]?$/i.test(option.trim()))) {
+        visual.hasImages = true; visual.images = []; visual.imagePending = false;
+        visual.imageIssue = root.CourseBridgeImages?.protocol === 2 ? '仅识别到选项字母，尚未读取到图片内容；未发送文字查题，请核对图片加载或联系适配' : '图片识别组件尚未加载，请保存作业后重新打开课程浏览器；未发送文字查题';
+      }
+      if (visual.hasImages) { title = visual.title; options = visual.options; }
+      const base = { id: String(index), title, titleElement, options, multiple, encoded: titleText.unresolved || optionTexts.some(item=>item.unresolved), element, inputs, ...visual };
       if (!inputs.length && root.CourseBridgeText) {
         const text = root.CourseBridgeText.read(element, title || '', includeHidden);
         return { ...base, ...text, editorReady: text.textFields.length > 0 };

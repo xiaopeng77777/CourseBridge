@@ -1,6 +1,6 @@
 /* Original CourseBridge implementation; shared between the extension and Node. */
 (function (root) {
-  const defaults = Object.freeze({ enabled: false, keepAwake: true, autoNext: true, autoAnswer: false, autoSubmit: false, skipUnanswered: true, collectQuestions: true, useOfflineBank: false, saveOnlineAnswers: true, lookupMode: 'enncy-deepseek', muted: true, playbackRate: 1, nextDelay: 5 });
+  const defaults = Object.freeze({ enabled: false, keepAwake: true, autoNext: true, autoAnswer: false, autoSubmit: false, imageAnalysis: true, skipUnanswered: true, collectQuestions: true, useOfflineBank: false, saveOnlineAnswers: true, lookupMode: 'enncy-deepseek', muted: true, playbackRate: 1, nextDelay: 5 });
   function normalize(value) {
     return String(value ?? '').normalize('NFKC').replace(/^\s*(?:第?\d+[题、.．)]|[A-H][.．、)）])\s*/i, '').replace(/[\s\u200b]+/g, '').toLowerCase();
   }
@@ -11,7 +11,7 @@
   function sanitizeSettings(input = {}) {
     const result = { ...defaults };
     result.major = typeof input.major === 'string' ? input.major.trim().slice(0, 80) : '';
-    for (const key of ['enabled', 'keepAwake', 'autoNext', 'autoAnswer', 'autoSubmit', 'skipUnanswered', 'collectQuestions', 'useOfflineBank', 'saveOnlineAnswers', 'muted']) if (typeof input[key] === 'boolean') result[key] = input[key];
+    for (const key of ['enabled', 'keepAwake', 'autoNext', 'autoAnswer', 'autoSubmit', 'skipUnanswered', 'collectQuestions', 'useOfflineBank', 'saveOnlineAnswers', 'imageAnalysis', 'muted']) if (typeof input[key] === 'boolean') result[key] = input[key];
     if (['local', 'enncy', 'deepseek', 'enncy-deepseek'].includes(input.lookupMode)) result.lookupMode = input.lookupMode;
     for (const [key, low, high] of [['playbackRate', 0.5, 16], ['nextDelay', 2, 60]]) {
       if (typeof input[key] === 'number' && Number.isFinite(input[key])) result[key] = Math.max(low, Math.min(high, input[key]));

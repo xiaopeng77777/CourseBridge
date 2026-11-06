@@ -6,6 +6,7 @@ function assessmentProgress(frames, settings, elapsed) {
   let reason = '', unresolved = false;
   if (!settings.autoAnswer) return { ready: settings.skipUnanswered, reason: settings.skipUnanswered ? '测验留待处理，准备进入下一课时' : '自动填写未开启，等待你完成测验', totals };
   if (frames.some(frame => frame.textInputPending)) return { ready: false, reason: frames.find(frame => frame.textInputPending).textInputReason || '正在输入正文，等待输入并核对保存完成', totals };
+  if (pending && frames.some(frame => /图片|长图/.test(frame.pendingDetail || ''))) return { ready: false, reason: `题库匹配 ${matched}/${total}；${frames.find(frame => /图片|长图/.test(frame.pendingDetail || '')).pendingDetail}`, totals };
   if (pending) return { ready: false, reason: `题库匹配 ${matched}/${total}；${frames.some(f => f.pendingSource === 'deepseek') ? 'DeepSeek 正在分析' : '言溪正在查找'} ${pending} 道题目，查询完成后继续`, totals };
   if (!total) { reason = '测验页已连接，但未识别到可填写题目'; unresolved = true; }
   else if (missing || conflict || ambiguous || encoded || unsupported) {

@@ -37,7 +37,7 @@
         <div class="service-status">
           <span class="dot"></span>本机服务已就绪
         </div>
-        <small>本地运行 · 可选第三方查题<br />v0.1.25 · Preview</small>
+        <small>本地运行 · 可选第三方查题<br />v0.1.27 · Preview</small>
       </div>
     </aside>
     <main>
@@ -262,6 +262,7 @@
                   ></span
                 ><input id="autoAnswer" type="checkbox" role="switch"
               /></label>
+              <label class="setting"><span><b>分析题干与选项图片</b><small>本地未匹配时使用已启用的 DeepSeek Flash 看图；长图分段处理，只发送题目图片，不发送整屏或登录信息。图片也按 Token 计费；关闭可保留图片题手动处理。</small></span><input id="imageAnalysis" type="checkbox" role="switch" /></label>
               <label class="setting"
                 ><span
                   ><b>全部匹配后自动提交</b
@@ -416,7 +417,7 @@
           <p id="deepseek-storage" class="enncy-caption">API Key 由系统加密保存在本机，不随题库备份导出。</p>
 
           <p class="enncy-caption">独立第三方服务，与课桥无隶属或合作关系。</p>
-          <details class="provider-details"><summary>服务、费用与自动保存说明</summary><p>DeepSeek 是独立第三方服务，与课桥无隶属或合作关系。调用费用由 DeepSeek 按你的 API 账户计费，使用课桥不附送额度。启用后会向官方接口发送需要分析的题干、选项和题型；结合专业的文本题还会发送你填写的专业背景。</p><p>AI 可能答错或无法确定答案；成功返回不代表正确。开启自动存回后，结果带来源与“未核验”标记保存，可供后续本地匹配，也会包含在你导出的题库备份中。可以在“在线未核验”筛选中检查并修正。</p><p>保存并验证只读取账户余额，不调用收费的答题接口。自动查题通常每题请求一次；有最低字数要求的文本题，字数不足或被截断时最多自动补写一次，可能增加一次 API 费用。仍不合格则停止，不随心跳重复收费重试；手动重试和更换模型可能产生新费用。</p></details>
+          <details class="provider-details"><summary>服务、费用与自动保存说明</summary><p>DeepSeek 是独立第三方服务，与课桥无隶属或合作关系。调用费用由 DeepSeek 按你的 API 账户计费，使用课桥不附送额度。启用后会向官方接口发送需要分析的题干、选项和题型；图片题会发送题干和选项的局部图片（不包含整屏、Cookie 或登录凭证），长图可能拆成多张并增加 Token 用量；结合专业的文本题还会发送你填写的专业背景。</p><p>AI 可能答错或无法确定答案；成功返回不代表正确。开启自动存回后，结果带来源与“未核验”标记保存，可供后续本地匹配，也会包含在你导出的题库备份中。可以在“在线未核验”筛选中检查并修正。</p><p>保存并验证只读取账户余额，不调用收费的答题接口。自动查题通常每题请求一次；有最低字数要求的文本题，字数不足或被截断时最多自动补写一次，可能增加一次 API 费用。仍不合格则停止，不随心跳重复收费重试；手动重试和更换模型可能产生新费用。</p></details>
           <div class="inline-actions provider-links"><button id="deepseek-keys" class="text-button">获取 API Key ↗</button><button id="deepseek-docs" class="text-button">官方接口说明 ↗</button><button id="deepseek-retry" class="text-button">重试未命中的题目</button></div>
           </details>
         </article>

@@ -43,10 +43,10 @@ function createBridge({ dataDir, port = PORT, token: suppliedToken, now = Date.n
     logs.splice(150);
   };
   persist();
-  const snapshot = () => ({ version: '0.1.25', token, port: server.address()?.port || port, settings, enncy: enncy.snapshot(), deepseek: deepseek.snapshot(), ...library.stats(), offlineBankCount: offline.count, frames: [...frames.values()].filter(f => now() - f.seen < 12000 && (!activeClientId || f.tabKey.startsWith(activeClientId + ':'))), logs });
+  const snapshot = () => ({ version: '0.1.27', token, port: server.address()?.port || port, settings, enncy: enncy.snapshot(), deepseek: deepseek.snapshot(), ...library.stats(), offlineBankCount: offline.count, frames: [...frames.values()].filter(f => now() - f.seen < 12000 && (!activeClientId || f.tabKey.startsWith(activeClientId + ':'))), logs });
   const saveDiagnostic = () => {
     const recent = snapshot();
-    fs.writeFileSync(path.join(dataDir, 'last-status.json'), JSON.stringify({ version: recent.version, time: now(), enabled: settings.enabled, sessions: summarizeSessions(recent.frames, settings.enabled), frames: recent.frames.map(({ title, chapter, status, media, questions, complete, iframeCount, iframeOrigins, frameHost, framePath, extensionVersion, frameId, visible, assessment, confirmed, taskComplete, stepKind, matchSummary, submitState }) => ({ title, chapter, status, media, questions, complete, iframeCount, iframeOrigins, frameHost, framePath, extensionVersion, frameId, visible, assessment, confirmed, taskComplete, stepKind, matchSummary, submitState })) }, null, 2));
+    fs.writeFileSync(path.join(dataDir, 'last-status.json'), JSON.stringify({ version: recent.version, time: now(), enabled: settings.enabled, sessions: summarizeSessions(recent.frames, settings.enabled), frames: recent.frames.map(({ title, chapter, status, media, questions, complete, iframeCount, iframeOrigins, frameHost, framePath, extensionVersion, frameId, visible, assessment, confirmed, taskComplete, stepKind, matchSummary, submitState, imageProtocol, imageQuestions, imageCount, imageFailures }) => ({ title, chapter, status, media, questions, complete, iframeCount, iframeOrigins, frameHost, framePath, extensionVersion, frameId, visible, assessment, confirmed, taskComplete, stepKind, matchSummary, submitState, imageProtocol, imageQuestions, imageCount, imageFailures })) }, null, 2));
   };
   const update = (input) => {
     assessmentWaits.clear();
@@ -80,7 +80,7 @@ function createBridge({ dataDir, port = PORT, token: suppliedToken, now = Date.n
       res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
       return respond(res, 204, {});
     }
-    if (req.url === '/health' && req.method === 'GET') return respond(res, 200, { name: 'CourseBridge', version: '0.1.25' });
+    if (req.url === '/health' && req.method === 'GET') return respond(res, 200, { name: 'CourseBridge', version: '0.1.27' });
     const provided = String(req.headers.authorization || '').replace(/^Bearer /, '');
     if (Buffer.byteLength(provided) !== Buffer.byteLength(token) || !timingSafeEqual(Buffer.from(provided), Buffer.from(token))) return respond(res, 401, { error: '配对码不正确' });
     if (req.method !== 'POST' || !['/v1/sync','/v1/font','/v1/type'].includes(req.url)) return respond(res, 404, { error: '接口不存在' });
@@ -154,19 +154,23 @@ function createBridge({ dataDir, port = PORT, token: suppliedToken, now = Date.n
         id: String(q.id || '').slice(0, 100), title: String(q.title || '').slice(0, 4000),
         options: Array.isArray(q.options) ? q.options.slice(0, 30).map(o => String(o).slice(0, 4000)) : [],
         multiple: q.multiple === true, encoded: q.encoded === true,
+        hasImages: q.hasImages === true || (Array.isArray(q.images) && q.images.length > 0), imageIssue: String(q.imageIssue || '').slice(0,200), imagePending: q.imagePending === true,
+        images: Array.isArray(q.images) ? q.images.slice(0,12).filter(d => d && /^[a-zA-Z0-9-]{1,80}$/.test(d.id) && /^[a-f0-9]{16}$/.test(d.key) && (d.position === 'title' || d.position === 'option' && Number.isInteger(d.optionIndex) && d.optionIndex >= 0 && d.optionIndex < q.options?.length)).map(({id,key,position,optionIndex}) => ({id,key,position,optionIndex:position==='title'?-1:optionIndex})) : [],
         ...(isTextQuestion(q) ? { type: q.type, blankCount: Math.max(1, Math.min(30, Number(q.blankCount) || 1)), minLength: Math.max(0, Math.min(5000, Number(q.minLength) || 0)), editorReady: q.editorReady !== false, major: needsMajor(q) ? settings.major : '' } : {})
       }));
       if (settings.collectQuestions && input.tabId >= 0 && entry.visible) {
-        if (library.capture(questions.filter(q=>q.encoded !== true), (entry.chapter || entry.title).replace(/\s+/g, ' ').trim())) log('新题目已收集到“我的题库 · 待补充”');
+        if (library.capture(questions.filter(q=>q.encoded !== true && !q.imageIssue), (entry.chapter || entry.title).replace(/\s+/g, ' ').trim())) log('新题目已收集到“我的题库 · 待补充”');
       }
       let remoteSaved = 0;
       const answers = questions.map(q => {
         if (q.encoded === true) return { id: String(q.id || '').slice(0,100), status:'encoded',indices:[] };
+        if (q.hasImages && q.imageIssue) return { id: q.id, status: q.imagePending ? 'pending' : 'missing', indices: [], detail: q.imageIssue };
         const question = q;
         if (isTextQuestion(question) && question.editorReady === false) return { id: q.id, status: 'missing', indices: [], detail: '文本编辑器尚未就绪或暂不支持，未发起在线查题' };
         const local = library.hasConflict(question) ? { status: 'conflict', indices: [] } : matchAnswers(question, bank);
         let result = local.status === 'missing' && settings.useOfflineBank && !isTextQuestion(question) ? offline.match(question) : local;
         const canRequest = settings.enabled && settings.autoAnswer && entry.visible && (entry.videoQuiz || (inAssessment && !confirmed)) && input.tabId >= 0;
+        if (question.hasImages && !settings.imageAnalysis && local.status !== 'matched') return { id: q.id, status: 'missing', indices: [], detail: '图片题分析已关闭；可在任务设置中开启，或手动补充本地答案' };
         if (local.status === 'missing' && ['missing', 'ambiguous'].includes(result.status)) result = resolveOnline(question, { mode: settings.lookupMode, providers, canRequest }) || result;
         if (canRequest && settings.saveOnlineAnswers && result.status === 'matched' && ['enncy', 'deepseek'].includes(result.source)) {
           try {
@@ -184,6 +188,11 @@ function createBridge({ dataDir, port = PORT, token: suppliedToken, now = Date.n
       const unsupported = Math.max(0, Math.min(60, Number(raw.questionTotal) || 0) - recognized);
       entry.matchSummary = { total: recognized + unsupported, matched: 0, missing: 0, conflict: 0, ambiguous: 0, encoded: 0, pending: 0, unsupported, filled: Math.min(recognized, entry.filled) };
       entry.remoteIssue = answers.find(answer => answer.detail && answer.status !== 'pending')?.detail || '';
+      entry.imageProtocol = Number(raw.imageProtocol) === 2 ? 2 : 0;
+      entry.imageQuestions = questions.filter(q => q.images.length > 0).length;
+      entry.imageCount = questions.reduce((n,q) => n + q.images.length,0);
+      entry.imageFailures = questions.filter(q => q.imageIssue).length;
+      entry.pendingDetail = String(answers.find(answer => answer.status === 'pending' && answer.detail)?.detail || '').slice(0,200);
       entry.pendingSource = answers.find(answer => answer.status === 'pending' && answer.pendingSource === 'deepseek') ? 'deepseek' : 'enncy';
       for (const answer of answers) if (answer.status in entry.matchSummary) entry.matchSummary[answer.status]++;
       const counts = (videoQuizBlocked ? checkpointFrames : assessmentFrames).map(f=>f.matchSummary).filter(Boolean);

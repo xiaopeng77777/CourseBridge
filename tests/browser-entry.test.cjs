@@ -7,7 +7,7 @@ test('恢复课程时不重复打开旧登录页，且过滤无关地址',()=>{
 });
 test('旧扫码入口使用 HTTPS 返回地址，保留指向具体课程的合法返回地址',()=>{
   const normalized=courseURLs(['https://passport2.chaoxing.com/login','https://passport2.chaoxing.com/login']);
-  assert.equal(normalized.length,1);assert.equal(new URL(normalized[0]).searchParams.get('refer'),'https://i.chaoxing.com/');
+  assert.equal(normalized.length,1);assert.equal(new URL(normalized[0]).searchParams.get('refer'),'https://i.mooc.chaoxing.com/space/index');
   const course='https://mooc1.chaoxing.com/mycourse/studentstudy?chapterId=demo';
   const valid=new URL('https://passport2.chaoxing.com/login');valid.searchParams.set('refer',course);
   assert.equal(new URL(courseURLs([valid.href])[0]).searchParams.get('refer'),course);

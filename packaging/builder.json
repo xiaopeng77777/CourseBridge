@@ -2,12 +2,21 @@
   "appId": "org.coursebridge.desktop",
   "productName": "CourseBridge",
   "electronVersion": "44.8.0",
-  "artifactName": "CourseBridge-0.1.25-Setup.${ext}",
-  "directories": { "output": "outputs/installers" },
+  "artifactName": "CourseBridge-${version}-Setup.${ext}",
+  "directories": {
+    "output": "outputs/installers"
+  },
   "compression": "normal",
   "publish": null,
   "win": {
-    "target": [{ "target": "nsis", "arch": ["x64"] }],
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
     "executableName": "CourseBridge",
     "icon": "desktop/assets/app.ico",
     "signAndEditExecutable": false
@@ -20,10 +29,13 @@
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
     "shortcutName": "课桥 CourseBridge",
-    "uninstallDisplayName": "课桥 CourseBridge 0.1.25",
+    "uninstallDisplayName": "课桥 CourseBridge ${version}",
     "runAfterFinish": false,
     "deleteAppDataOnUninstall": false,
-    "installerLanguages": ["zh_CN", "en_US"],
+    "installerLanguages": [
+      "zh_CN",
+      "en_US"
+    ],
     "language": "2052",
     "differentialPackage": false
   }

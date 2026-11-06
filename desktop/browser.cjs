@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { chromium } = require('playwright-core');
+const PERSONAL_HOME = 'https://i.mooc.chaoxing.com/space/index';
 
 function isLoginURL(value) {
   try { const url = new URL(value); return /^(?:passport2(?:-api)?|sso|login)\.chaoxing\.com$/i.test(url.hostname) || /\.chaoxing\.com$/i.test(url.hostname) && /^\/(?:login|sso)(?:\/|$)/i.test(url.pathname); }
@@ -14,7 +15,7 @@ function courseURLs(values) {
   return [...new Set(valid.map(value => {
     const url=new URL(value);let refer;
     try { refer=new URL(url.searchParams.get('refer')); }catch{}
-    if (!refer || isLoginURL(refer.href) || refer.hostname==='i.mooc.chaoxing.com') url.searchParams.set('refer','https://i.chaoxing.com/');
+    if (!refer || isLoginURL(refer.href) || refer.hostname==='i.mooc.chaoxing.com') url.searchParams.set('refer',PERSONAL_HOME);
     return url.href;
   }))].slice(0,1);
 }
@@ -68,13 +69,13 @@ function createBrowserManager({ runtimeDir, extensionDir, profileDir, token, isT
   let closed = false;
   let state = { status: '尚未打开课程浏览器', version: '', updatePending: false, running: false };
   const snapshot = () => ({ ...state, ...(context && state.running && context.pages().some(page => isLoginURL(page.url())) && !context.pages().some(page => /\/mycourse\/studentstudy/.test(page.url())) ? { status:'学习通尚未登录，请先在浏览器完成登录' } : {}) });
-  const pagesFile = path.join(path.dirname(profileDir), 'course-pages.json');
   async function open(urls) {
     if (opening) return opening;
     if (context) { const page = preferredPage(context.pages()) || await context.newPage(); await page.bringToFront(); return snapshot(); }
     opening = (async () => {
-      if (!urls) { try { urls=courseURLs(JSON.parse(fs.readFileSync(pagesFile,'utf8'))); } catch { urls=[]; } }
-      if (!urls.length) urls=['https://i.chaoxing.com/'];
+      const homeEntry = !Array.isArray(urls) || !urls.length;
+      urls = homeEntry ? [PERSONAL_HOME] : courseURLs(urls);
+      if (!urls.length) urls = [PERSONAL_HOME];
       state = { ...state, status: '正在打开课程浏览器…', updatePending: false };
       try { findChromium(runtimeDir); }
       catch { state.status = '正在准备课程浏览器组件，首次下载可能需要几分钟…'; await ensureRuntime(); }
@@ -110,10 +111,11 @@ function createBrowserManager({ runtimeDir, extensionDir, profileDir, token, isT
         const restored = launched.pages();
         const used = new Set();
         for (let i = 0; i < urls.length; i++) {
-          const page = restored.find(page=>!used.has(page) && page.url()===urls[i]) || restored.find(page=>!used.has(page) && page.url()==='about:blank') || await launched.newPage();
+          const page = restored.find(page=>!used.has(page) && page.url()===urls[i]) || restored.find(page=>!used.has(page) && page.url()==='about:blank') || (homeEntry && i === 0 ? restored.find(page => !used.has(page)) : null) || await launched.newPage();
           used.add(page);
           if (page.url()!==urls[i]) await page.goto(urls[i], { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
         }
+        if (homeEntry) { for (const page of restored) if (!used.has(page) && !page.isClosed()) await page.close(); await [...used][0].bringToFront(); }
         state = { status: '浏览器已连接 · 插件已自动配对', version: info.version, updatePending: false, running: true };
         return snapshot();
       } catch (error) {
@@ -149,8 +151,8 @@ function createBrowserManager({ runtimeDir, extensionDir, profileDir, token, isT
   timer.unref();
   return {
     snapshot, open, checkUpdates,
-    async close() { closed = true; clearInterval(timer); const previous = context; context = undefined; if (previous) { try { fs.writeFileSync(pagesFile,JSON.stringify(courseURLs(previous.pages().map(page=>page.url())))); } catch { /* Closing remains possible if the saved page list is unavailable. */ } } await previous?.close(); state.running = false; },
+    async close() { closed = true; clearInterval(timer); const previous = context; context = undefined; await previous?.close(); state.running = false; },
     context: () => context
   };
 }
-module.exports = { createBrowserManager, findChromium, extensionHash, courseURLs, isLoginURL, preferredPage, ensureTextProtocol, hasOpenPaper };
+module.exports = { createBrowserManager, findChromium, extensionHash, courseURLs, isLoginURL, preferredPage, ensureTextProtocol, hasOpenPaper, PERSONAL_HOME };

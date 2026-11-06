@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "课桥 CourseBridge",
-  "version": "0.1.25",
+  "version": "0.1.27",
   "description": "连接课桥桌面端，控制课程播放、章节切换与自有题库匹配。",
   "permissions": [
     "storage"
@@ -42,6 +42,7 @@
       "js": [
         "rules.js",
         "font.js",
+        "images.js",
         "adapter.js",
         "text.js",
         "exam.js",

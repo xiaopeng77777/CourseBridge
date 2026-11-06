@@ -1,7 +1,7 @@
 {
   "name": "coursebridge-packaging",
   "private": true,
-  "version": "0.1.25",
+  "version": "0.1.27",
   "license": "MIT",
   "devDependencies": {
     "electron-builder": "26.15.3"

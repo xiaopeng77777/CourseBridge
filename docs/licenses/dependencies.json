@@ -1,5 +1,5 @@
 {
-  "version": "0.1.25",
+  "version": "0.1.27",
   "note": "Inventory from lockfiles; does not replace package LICENSE/NOTICE texts. Browser binaries downloaded separately.",
   "dependencies": [
     {

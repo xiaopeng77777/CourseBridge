@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, clipboard, session, powerMonitor, powerSaveBlocker, safeStorage } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, clipboard, session, powerMonitor, powerSaveBlocker, safeStorage, nativeImage } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
@@ -7,6 +7,7 @@ const { createBrowserManager } = require('./browser.cjs');
 const { readImport } = require('./library.cjs');
 const { createPowerKeeper } = require('./power.cjs');
 const { createTextTyper } = require('./typing.cjs');
+const { createQuestionImageReader } = require('./question-images.cjs');
 const { prepareBrowserRuntime } = require('./browser-runtime.cjs');
 
 const root = path.join(__dirname, '..');
@@ -20,13 +21,15 @@ let window;
 let browser;
 let power;
 let typer;
+let imageReader;
 let shuttingDown = false;
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { window?.show(); window?.focus(); });
   app.whenReady().then(async () => {
     typer = createTextTyper({ getContext: () => browser?.context() });
-    bridge = createBridge({ dataDir, secureStorage: safeStorage, textInput: typer.request, port: process.env.COURSEBRIDGE_TEST === '1' && process.env.COURSEBRIDGE_TEST_PORT === '0' ? 0 : undefined });
+    imageReader = createQuestionImageReader({ getContext: () => browser?.context(), nativeImage });
+    bridge = createBridge({ dataDir, secureStorage: safeStorage, textInput: typer.request, deepseekOptions: { imageReader: imageReader.read }, port: process.env.COURSEBRIDGE_TEST === '1' && process.env.COURSEBRIDGE_TEST_PORT === '0' ? 0 : undefined });
     try { await bridge.listen(); }
     catch { dialog.showErrorBox('无法启动课桥', '本机连接端口 17328 已被占用，请关闭另一个课桥实例后重试。'); return app.quit(); }
     power = createPowerKeeper({ powerMonitor, powerSaveBlocker, getState: () => bridge.snapshot() });
@@ -93,6 +96,7 @@ else {
     event.preventDefault(); shuttingDown = true;
     power?.dispose();
     typer?.close();
+    imageReader?.close();
     Promise.allSettled([browser?.close(), bridge?.close()]).finally(() => app.quit());
   });
 }

@@ -1,6 +1,6 @@
 {
   "name": "coursebridge",
-  "version": "0.1.25",
+  "version": "0.1.27",
   "private": true,
   "description": "课桥：独立编写的开源课程助手桌面端与浏览器扩展",
   "license": "MIT",
@@ -34,7 +34,10 @@
     "test:editor-input": "node tests/editor-input-browser.cjs",
     "audit:release": "node scripts/audit-release.cjs",
     "installer:win": "node scripts/installer.cjs",
-    "docs:preview": "node scripts/preview-docs.cjs"
+    "docs:preview": "node scripts/preview-docs.cjs",
+    "test:images": "electron tests/image-questions-electron.cjs",
+    "test:browser-home": "node tests/browser-home.cjs",
+    "test:images-extension": "electron tests/image-extension-browser.cjs"
   },
   "devDependencies": {
     "electron": "44.8.0",
