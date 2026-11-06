@@ -51,7 +51,7 @@ Typr 调研时记录的 Git blob 为：`Typr.js` → `aaf8acd92ed0c748eae49993fa
 
 ## 外部服务、商标与数据
 
-学习通 / 超星是被适配的第三方平台；OCS、言溪、DeepSeek、Google Chrome、Electron 和 GitHub 等名称分别归其权利人所有。名称用于说明兼容性、来源和服务关系，不代表关联或背书。
+所适配的课程平台属于独立第三方；OCS、言溪、DeepSeek、Google Chrome、Electron 和 GitHub 等名称分别归其权利人所有。名称用于说明兼容性、来源和服务关系，不代表关联或背书。
 
 言溪通过其公开服务接口提供查题和额度查询；DeepSeek 通过官方 API 提供生成与余额查询。用户自己配置账号与凭证，相关收费、使用条款及数据政策由服务方管理。第三方的 API 可访问不代表题库数据获准整体抓取或重新发布。
 
